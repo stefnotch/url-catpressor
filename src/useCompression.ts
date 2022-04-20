@@ -211,7 +211,7 @@ import init from "brotli-wasm/pkg.bundler/brotli_wasm_bg.wasm";
 interface BrotliWasm {
   memory: WebAssembly.Memory;
 
-  compress(a: number, b: number, c: number): void;
+  compress(a: number, b: number, c: number, d: number): void;
   decompress(a: number, b: number, c: number): void;
   __wbindgen_add_to_stack_pointer(a: number): number;
   __wbindgen_malloc(a: number): number;
@@ -369,12 +369,8 @@ export async function useCompression() {
   function getArrayU8FromWasm0(ptr, len) {
     return getUint8Memory0().subarray(ptr / 1, ptr / 1 + len);
   }
-  /**
-   * @param {Uint8Array} buf
-   * @param {any} raw_options
-   * @returns {Uint8Array}
-   */
-  function compress(buf, raw_options) {
+
+  function compress(buf: Uint8Array, raw_options: any): Uint8Array {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
       var ptr0 = passArray8ToWasm0(buf, wasm.__wbindgen_malloc);
@@ -391,11 +387,7 @@ export async function useCompression() {
     }
   }
 
-  /**
-   * @param {Uint8Array} buf
-   * @returns {Uint8Array}
-   */
-  function decompress(buf) {
+  function decompress(buf: Uint8Array): Uint8Array {
     try {
       const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
       var ptr0 = passArray8ToWasm0(buf, wasm.__wbindgen_malloc);
@@ -465,95 +457,8 @@ export async function useCompression() {
     throw takeObject(arg0);
   }
 
-  const pseudoBase64 = usePseudoBase64();
-
-  const name = "bw1"; // brotli-wasm-1
-
-  function compressForUrl(value: string) {
-    const textEncoder = new TextEncoder();
-    const binaryData = compress(textEncoder.encode(value));
-    return name + "@" + pseudoBase64.encode(binaryData);
-  }
-
-  function decompressFromUrl(value: string) {
-    const nameSeparatorIndex = value.indexOf("@");
-    if (nameSeparatorIndex == -1) return "";
-    const encodingName = value.substring(0, nameSeparatorIndex);
-    const urlData = value.substring(nameSeparatorIndex + 1);
-    if (encodingName === name) {
-      const binaryData = decompress(pseudoBase64.decode(urlData));
-      const textDecoder = new TextDecoder("utf-8");
-      return textDecoder.decode(binaryData);
-    } else {
-      return "";
-    }
-  }
-
   return {
-    name,
     compress,
     decompress,
-    compressForUrl,
-    decompressFromUrl,
-  };
-}
-
-function usePseudoBase64() {
-  // Sorta like base64, but not quite
-  // https://stackoverflow.com/questions/695438/what-are-the-safe-characters-for-making-urls
-  // https://unpkg.com/browse/@sunder/kit@0.1.5/encoding/base64.js
-  const urlSafeCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-";
-  const paddingChar = "_";
-  const lookupTable = new Uint8Array(256); // 1 byte
-  for (let i = 0; i < urlSafeCharacters.length; i++) {
-    lookupTable[urlSafeCharacters.charCodeAt(i)] = i;
-  }
-
-  function encode(value: Uint8Array): string {
-    let output = "";
-    for (let i = 0; i < value.length; i += 3) {
-      const b0 = value[i + 0];
-      const b1 = value[i + 1];
-      const b2 = value[i + 2];
-      output += urlSafeCharacters.charAt(b0 >>> 2);
-      output += urlSafeCharacters.charAt(((b0 & 3) << 4) | (b1 >>> 4));
-      output += urlSafeCharacters.charAt(((b1 & 15) << 2) | (b2 >>> 6));
-      output += urlSafeCharacters.charAt(b2 & 63);
-    }
-    if (value.length % 3 === 2) {
-      output = output.substring(0, output.length - 1) + paddingChar;
-    } else if (value.length % 3 === 1) {
-      output = output.substring(0, output.length - 2) + paddingChar;
-    }
-    return output;
-  }
-
-  function decode(value: string): Uint8Array {
-    let bufferLength = (value.length * 3) >>> 2; // * 0.75
-    if (value.charCodeAt(value.length - 1) === paddingChar.charCodeAt(0)) {
-      bufferLength--;
-    }
-    if (value.charCodeAt(value.length - 2) === paddingChar.charCodeAt(0)) {
-      bufferLength--;
-    }
-    const bytes = new Uint8Array(bufferLength);
-    for (let i = 0, p = 0; i < value.length; i += 4) {
-      const encoded1 = lookupTable[value.charCodeAt(i + 0)];
-      const encoded2 = lookupTable[value.charCodeAt(i + 1)];
-      const encoded3 = lookupTable[value.charCodeAt(i + 2)];
-      const encoded4 = lookupTable[value.charCodeAt(i + 3)];
-      if (encoded1 === undefined || encoded2 === undefined || encoded3 === undefined || encoded4 === undefined) {
-        throw new Error("Non-base64 character");
-      }
-      bytes[p++] = (encoded1 << 2) | (encoded2 >> 4);
-      bytes[p++] = ((encoded2 & 15) << 4) | (encoded3 >> 2);
-      bytes[p++] = ((encoded3 & 3) << 6) | (encoded4 & 63);
-    }
-    return bytes;
-  }
-
-  return {
-    encode,
-    decode,
   };
 }

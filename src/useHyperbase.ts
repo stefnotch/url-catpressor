@@ -23,7 +23,7 @@
  */
 export function useHyperbase() {
   /**
-   * Encodes the given bytes as a baseN array
+   * Encodes the given bytes as a backwards baseN array
    * @param input the bytes to encode
    * @returns the baseN-encoded values
    */
