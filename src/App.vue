@@ -4,6 +4,7 @@ import { ref, shallowRef, watch, type Ref } from "vue";
 import { useCompression } from "./useCompression";
 import debounceFn from "debounce-fn";
 import { useHyperbase } from "./useHyperbase";
+import { CatWords } from "./cat-list";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
