@@ -11,22 +11,32 @@ const textDecoder = new TextDecoder();
 const urlInput = ref("");
 const compressedUrlBytes = ref(new Uint8Array(0));
 
-// TODO: Strip the HTTP(s) part -> 1 bit
-
 useCompression().then((compression) => {
+  const windowHash = window.location.hash;
+  if (windowHash.length > 1) {
+    const decodedHash = decodeURIComponent(windowHash.slice(1));
+    // const decompressedHash = decompress()
+
+    window.location.replace(decodedHash);
+  }
+
   function compress(text: string) {
     return compression.compress(textEncoder.encode(text), { quality: 11 });
   }
   function decompress(compressed: Uint8Array) {
     return textDecoder.decode(compression.decompress(compressed));
   }
+
+  // 1. List of catz
+  // 2. List of letter-lookalikes (with mostly every letter that appears in le cats list getting a bunch of lookalikes)
+
   watch(
     urlInput,
     debounceFn(
       () => {
         // Technically this doesn't support all kinds of URLs, but eh
+        // Strip the HTTP(s) part -> 1 bit
         const urlString = urlInput.value.replace(/^https?:\/\/|^\/\//, "");
-        console.log(urlString);
         const compressed: Uint8Array = concatUint8Array(
           new Uint8Array([urlInput.value.startsWith("http:") ? 0 : 1]),
           compress(urlString)
@@ -111,35 +121,6 @@ a,
 @media (hover: hover) {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
-
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
   }
 }
 </style>
