@@ -150,25 +150,33 @@ export function useHyperbase() {
 
 function testHyperbase() {
   for (let base = 2; base < 256; base++) {
-    const hb = useHyperbase(base);
+    const hb = useHyperbase();
     const valueLength = Math.floor(Math.random() * 100);
 
     const values = new Uint8Array(valueLength);
     for (let i = 0; i < valueLength; i++) {
       values[i] = Math.floor(Math.random() * 256);
     }
-    const encoded = hb.encode(values);
-    const decoded = hb.decode(encoded);
+    let divisors: number[] = [];
+    const getDivEncoding = () => {
+      const d = Math.floor(Math.random() * (256 - 2)) + 2;
+      divisors.push(d);
+      return d;
+    };
+    const encoded = hb.encode(values, getDivEncoding);
+
+    const decodingDivisors = divisors.slice();
+    decodingDivisors.reverse();
+    const decoded = hb.decode(encoded, decodingDivisors);
+
     if (!values.every((v, i) => v === decoded[i])) {
       console.log(`Failed to encode/decode with base ${base}`);
       console.log(valueLength);
       console.log(values);
       console.log(decoded);
-      //return false;
+      console.log(encoded);
     }
   }
-
-  return true;
 }
 
 testHyperbase();
