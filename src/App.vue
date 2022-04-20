@@ -5,20 +5,26 @@ import { useCompression } from "./useCompression";
 import debounceFn from "debounce-fn";
 import { useHyperbase } from "./useHyperbase";
 import { CatWords } from "./cat-list";
+import { Homoglyphs } from "./homoglyphs";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 const urlInput = ref("");
 const compressedUrlBytes = ref(new Uint8Array(0));
+const encodedUrl = ref("");
 
 useCompression().then((compression) => {
   const windowHash = window.location.hash;
   if (windowHash.length > 1) {
     const decodedHash = decodeURIComponent(windowHash.slice(1));
-    // const decompressedHash = decompress()
+    window.location.replace(decompress(catDecode(decodedHash)));
+  }
 
-    window.location.replace(decodedHash);
+  function catEncode(data: Uint8Array): string {}
+
+  function catDecode(data: string): Uint8Array {
+    const words = data.split("-");
   }
 
   function compress(text: string) {
@@ -47,6 +53,10 @@ useCompression().then((compression) => {
       { wait: 200 }
     )
   );
+
+  watch(compressedUrlBytes, () => {
+    encodedUrl.value = catEncode(compressedUrlBytes.value);
+  });
 });
 
 function concatUint8Array(a: Uint8Array, b: Uint8Array) {
@@ -86,10 +96,12 @@ const splashTexts = [
       <br />
       {{ urlInput.length }} characters compressed to {{ compressedUrlBytes.length }} bytes (=
       {{ compressedUrlBytes.length * 8 }} bits)
+      <br />
+      {{ encodedUrl }}
     </div>
   </header>
 
-  <main>x</main>
+  <main>lorem ipsum</main>
 </template>
 
 <style>

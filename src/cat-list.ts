@@ -242,7 +242,7 @@ const CatPedia = [
 
 export const CatWords = fixWords([...new Set(CatMisc.concat(CatNoises).concat(CatNames).concat(CatPedia))]);
 
-console.log(CatWords);
+// console.log(CatWords);
 
 const catWordDuplicates = new Set<string>();
 CatWords.forEach((word) => {
@@ -252,19 +252,6 @@ CatWords.forEach((word) => {
   } else {
     catWordDuplicates.add(word);
   }
-});
-
-export const CatLookalikes = [["🐱", "😸", "😹", "😺", "😻", "😼"]];
-
-export const CatLookalikesMap = new Map<string, { index: number; lookalikes: string[] }>();
-
-CatLookalikes.forEach((v) => {
-  v.forEach((lookalike, i) => {
-    if (CatLookalikesMap.has(lookalike)) {
-      console.warn(`Duplicate lookalike: ${lookalike}`);
-    }
-    CatLookalikesMap.set(lookalike, { index: i, lookalikes: v });
-  });
 });
 
 function pluralize(...words: string[]) {
