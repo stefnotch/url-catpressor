@@ -12,6 +12,38 @@ const urlInput = ref("");
 const compressedUrl = ref(new Uint8Array(0));
 
 // TODO: Strip the HTTP(s) part -> 1 bit
+function testHyperbase() {
+  for (let base = 2; base < 256; base++) {
+    const hb = useHyperbase();
+    const valueLength = Math.floor(Math.random() * 100);
+
+    const values = new Uint8Array(valueLength);
+    for (let i = 0; i < valueLength; i++) {
+      values[i] = Math.floor(Math.random() * 256);
+    }
+    let divisors: number[] = [];
+    const getDivEncoding = () => {
+      const d = Math.floor(Math.random() * (256 - 2)) + 2;
+      divisors.push(d);
+      return d;
+    };
+    const encoded = hb.encode(values, getDivEncoding);
+
+    const decodingDivisors = divisors.slice();
+    decodingDivisors.reverse();
+    const decoded = hb.decode(encoded, decodingDivisors);
+
+    if (!values.every((v, i) => v === decoded[i])) {
+      console.log(`Failed to encode/decode with base ${base}`);
+      console.log(valueLength);
+      console.log(values);
+      console.log(decoded);
+      console.log(encoded);
+    }
+  }
+}
+
+testHyperbase();
 
 useCompression().then((compression) => {
   function compress(text: string) {

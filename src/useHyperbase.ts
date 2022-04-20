@@ -21,16 +21,17 @@
  * Basically base-n encoding, except that the n changes all the time.
  * And n has to be less than 256 or so.
  */
-export function useHyperbase(divisor: number) {
+export function useHyperbase() {
   /**
    * Encodes the given bytes as a baseN array
    * @param input the bytes to encode
    * @returns the baseN-encoded values
    */
-  function encode(input: Uint8Array): number[] {
+  function encode(input: Uint8Array, nextDivisor: () => number): number[] {
     if (input.length == 0) {
       return [];
     }
+
     // Count leading zeros.
     let zeros = 0;
     while (zeros < input.length && input[zeros] == 0) {
@@ -43,9 +44,14 @@ export function useHyperbase(divisor: number) {
     let outputStart = encoded.length; // travel from the back
     for (let inputStart = zeros; inputStart < input.length; ) {
       outputStart -= 1;
+      const divisor = validateDivisor(nextDivisor());
+      // Invariant: Input is a base 256 number
+      // Encoded is a backwards base N number, where N depends on the "nextDivisor"
       encoded[outputStart] = divmod(input, inputStart, 256, divisor);
       if (input[inputStart] == 0) {
-        inputStart += 1; // optimization - skip leading zero (after successful division?)
+        // After having divided it often enough, the leading digit will be a zero
+        // So we can move on to the next digit, that way our long division can skip some useless work
+        inputStart += 1;
       }
     }
     // Preserve exactly as many leading encoded zeros in output as there were leading zeros in input.
@@ -59,30 +65,34 @@ export function useHyperbase(divisor: number) {
     // Return encoded values (including encoded leading zeros).
     return encoded.slice(outputStart, encoded.length);
   }
-
   /**
    * Decodes the given baseX values into the original data bytes.
    *
    * @param input the baseX-encoded values to decode
    * @return the decoded data bytes
    */
-  function decode(input: number[]): Uint8Array {
+  function decode(input: number[], divisors: number[]): Uint8Array {
     if (input.length == 0) {
       return new Uint8Array(0);
     }
+
+    divisors = divisors.slice();
     // Count leading zeros.
     let zeros = 0;
     while (zeros < input.length && input[zeros] == 0) {
       zeros += 1;
+      divisors.unshift(1); // An interesting  hack
     }
+
     // Convert base-X digits to base-256 digits.
+    input = input.slice(); // make a clone, now we can modify this "number" in place
     let decoded = new Uint8Array(input.length);
     let outputStart = decoded.length;
     for (let inputStart = zeros; inputStart < input.length; ) {
       outputStart -= 1;
-      decoded[outputStart] = divmod(input, inputStart, divisor, 256);
+      decoded[outputStart] = divmod(input, inputStart, divisors, 256);
       if (input[inputStart] == 0) {
-        inputStart += 1; // optimization - skip leading zeros
+        inputStart += 1;
       }
     }
     // Ignore extra leading zeroes that were added during the calculation.
@@ -91,6 +101,13 @@ export function useHyperbase(divisor: number) {
     }
     // Return decoded data (including original number of leading zeros).
     return decoded.slice(outputStart - zeros, decoded.length);
+  }
+
+  function validateDivisor(d: number): number {
+    if (d < 2 || d > 256) {
+      throw new Error("Invalid divisor: " + d);
+    }
+    return d;
   }
 
   /**
@@ -108,14 +125,15 @@ export function useHyperbase(divisor: number) {
   function divmod(
     number: { readonly length: number; [n: number]: number },
     firstDigit: number,
-    base: number,
+    bases: number | number[],
     divisor: number
   ): number {
     // this is just long division which accounts for the base of the input digits
     let remainder = 0;
     for (let i = firstDigit; i < number.length; i++) {
-      let digit = number[i];
-      let temp = remainder * base + digit;
+      const base = Array.isArray(bases) ? bases[i] : bases;
+      if (!Number.isInteger(base)) throw new Error("Invalid base: " + base);
+      let temp = remainder * base + number[i];
       number[i] = Math.floor(temp / divisor);
       remainder = temp % divisor;
     }
