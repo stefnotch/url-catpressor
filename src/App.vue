@@ -3,6 +3,7 @@ import { computed } from "@vue/reactivity";
 import { ref, shallowRef, watch, type Ref } from "vue";
 import { useCompression } from "./useCompression";
 import debounceFn from "debounce-fn";
+import { useHyperbase } from "./useHyperbase";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -46,6 +47,7 @@ const splashTexts = [
   "（Φ ω Φ）",
   "Squish that cat",
   "Nyanyanyan!",
+  "Blep",
 ];
 </script>
 
