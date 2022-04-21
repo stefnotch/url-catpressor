@@ -107,10 +107,11 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
       assert(encoded.length <= homoglyphCounts.length, `${encoded.length} must be less than ${homoglyphCounts.length}`);
       {
         let quickDecoded = hyperbase.decode(encoded, divisors);
-        console.log({
-          toEncode,
-          quickDecoded,
-        });
+        assert(toEncode.length == quickDecoded.length, `Decoding must round-trip (length)`);
+        assert(
+          toEncode.every((v, i) => quickDecoded[i] == v),
+          `Decoding must round-trip (bytes)`
+        );
       }
 
       let encodedIndex = 0;
@@ -121,6 +122,7 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
           .map((v) => {
             if (encodedIndex == encodedReversed.length) {
               // Done encoding, put a cute little separator here
+              encodedIndex += 1;
               return "--" + v;
             } else if (encodedIndex > encodedReversed.length) {
               // Done encoding
@@ -164,8 +166,7 @@ function catDecode(data: string): Uint8Array {
   endBytes.reverse();
 
   // Decode other bytes (which were encoded by picking the letter homoglyphs)
-  const homoglyphCounts: number[] = [];
-  words.forEach((word) => homoglyphCounts.push(...getWordHomoglyphCounts(word)));
+  const divisors: number[] = [];
 
   // Skip the letters after the --
   const wordsWithData = data.replace(/--.*/, "").split("-");
@@ -176,14 +177,15 @@ function catDecode(data: string): Uint8Array {
       if (letterHomoglyphsInfo === undefined) return;
 
       antiEncodedReversed.push(letterHomoglyphsInfo.index);
+      divisors.push(letterHomoglyphsInfo.lookalikes.length);
     })
   );
 
-  const antiEncoded = antiEncodedReversed.slice(); //.reverse();
-  const antiToEncode = hyperbase.decode(antiEncoded, homoglyphCounts);
+  const antiEncoded = antiEncodedReversed.slice().reverse();
+  const antiToEncode = hyperbase.decode(antiEncoded, divisors);
   console.log({
     endBytes,
-    homoglyphCounts,
+    divisors,
     antiEncoded,
     antiToEncode,
   });
