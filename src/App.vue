@@ -3,6 +3,7 @@ import { computed, ref, shallowRef, watch, type Ref } from "vue";
 import { useCompression } from "./useCompression";
 import Compressor from "./Compressor.vue";
 import CatpressorLogo from "./assets/CatpressorLogo.vue";
+import { catDecode } from "./cat-encoding";
 
 const compressor = shallowRef<{
   compress(data: Uint8Array): Uint8Array;
@@ -10,15 +11,24 @@ const compressor = shallowRef<{
 } | null>(null);
 
 const urlInput = ref("");
-const isUrl = computed(() => urlInput.value !== "" && urlInput.value.includes("."));
+const isUrl = computed(() => urlInput.value !== "" && (urlInput.value.includes(".") || urlInput.value.includes("/")));
+const textDecoder = new TextDecoder();
 
-useCompression().then(
-  (c) =>
-    (compressor.value = {
-      compress: (data) => c.compress(data, { quality: 11 }),
-      decompress: c.decompress,
-    })
-);
+useCompression().then((c) => {
+  const windowHash = window.location.hash;
+  if (windowHash.length > 1) {
+    const decodedHash = decodeURIComponent(windowHash.slice(1));
+    console.log("About to navigate..", decodedHash);
+    const decodedBytes = catDecode(decodedHash);
+    window.location.replace(
+      (decodedBytes[0] ? "https://" : "http://") + textDecoder.decode(c.decompress(decodedBytes.slice(1)))
+    );
+  }
+  compressor.value = {
+    compress: (data) => c.compress(data, { quality: 11 }),
+    decompress: c.decompress,
+  };
+});
 
 const splashTexts = [
   "OwO",
