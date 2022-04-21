@@ -123,7 +123,7 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
             if (encodedIndex == encodedReversed.length) {
               // Done encoding, put a cute little separator here
               encodedIndex += 1;
-              return "--" + v;
+              return "__" + v;
             } else if (encodedIndex > encodedReversed.length) {
               // Done encoding
               return v;
@@ -146,7 +146,7 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
           .join("")
       );
 
-      return encodedWords.join("-");
+      return encodedWords.join("_");
     }
 
     await sleep(0, abortSignal); // So that we don't hang the browser
@@ -155,7 +155,7 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
 
 function catDecode(data: string): Uint8Array {
   // Decode final bytes (which were encoded by picking the words)
-  const words = data.replace("--", "").split("-");
+  const words = data.replace("__", "").split("_");
   const endBytes = words.map((v) => {
     const value = normalizedCatWordIndices.get(normalizeWordHomoglyphs(v));
     if (value === undefined) {
@@ -169,7 +169,7 @@ function catDecode(data: string): Uint8Array {
   const divisors: number[] = [];
 
   // Skip the letters after the --
-  const wordsWithData = data.replace(/--.*/, "").split("-");
+  const wordsWithData = data.replace(/__.*/, "").split("_");
   const antiEncodedReversed: number[] = [];
   wordsWithData.forEach((word) =>
     [...word].forEach((v) => {

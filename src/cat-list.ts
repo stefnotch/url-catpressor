@@ -265,6 +265,6 @@ function pluralize(...words: string[]) {
 
 function fixWords(words: string[]) {
   return words.map((word) => {
-    return word.replaceAll(/\s|-/g, "_");
+    return word.replaceAll(/\s|_/g, "-");
   });
 }
