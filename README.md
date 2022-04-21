@@ -3,7 +3,7 @@
 Cats hehe
 
 Getting this to work involved the code being like
-![No](https://tenor.com/view/cat-glitch-bug-wtf-angrycat-gif-8082737)
+![No](https://c.tenor.com/LAHdIKYb2U8AAAPo/cat-glitch.mp4)
 
 until I bonked it hard enough.
 
