@@ -33,18 +33,25 @@ const splashTexts = [
   "(=^･ω･^=)",
   "(=^･ω･^=) 🐟",
   "（Φ ω Φ）",
-  "Squish that cat",
+  "Squish that cat!",
   "Nyanyanyan!",
   "Blep",
 ];
+const chosenSplashText = ref(splashTexts[Math.floor(Math.random() * splashTexts.length)]);
+const isLongSplashText = computed(() => chosenSplashText.value.length > 12);
 </script>
 
 <template>
   <header>
     <!-- Needs to move-->
-    <CatpressorLogo class="logo" />
+    <div class="logo">
+      <CatpressorLogo />
+      <span v-if="!isLongSplashText" class="short-splash">{{ chosenSplashText }}</span>
+    </div>
+
     <!--Top right corner^ or text below, depending on le length-->
   </header>
+  <div v-if="isLongSplashText" class="long-splash">{{ chosenSplashText }}</div>
 
   <main>
     <div class="wrapper">
@@ -94,7 +101,22 @@ header {
   overflow: hidden;
 }
 .logo {
+  display: flex;
   animation: jelly-cat 1.6s ease 0.5s 1 normal forwards;
+  position: relative;
+}
+.short-splash {
+  font-size: 40px;
+  position: absolute;
+  right: -30px;
+  top: 70px;
+  transform: rotate(39deg);
+  text-shadow: 2px 2px 0px rgb(255, 236, 192);
+}
+.long-splash {
+  text-align: center;
+  padding: 4px;
+  font-style: italic;
 }
 .input-wrapper {
   display: flex;
