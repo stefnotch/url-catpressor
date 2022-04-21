@@ -3,7 +3,8 @@ import { ref, shallowRef, watch, type Ref, computed } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useHyperbase } from "./useHyperbase";
 import { CatWords } from "./cat-list";
-import { Homoglyphs, HomoglyphsMap } from "./homoglyphs";
+import { HomoglyphsMap, getWordHomoglyphCounts, normalizeWordHomoglyphs } from "./homoglyphs";
+import { assert } from "./assert";
 
 const props = defineProps<{
   compressor: {
@@ -14,13 +15,12 @@ const props = defineProps<{
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+const hyperbase = useHyperbase();
 
 const urlInput = ref("");
 const isUrl = computed(() => urlInput.value !== "" && urlInput.value.includes("."));
 const compressedUrlBytes = ref(new Uint8Array(0));
 const encodedUrl = ref("");
-
-const hyperbase = useHyperbase();
 
 function sleep(ms: number, abortSignal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -50,6 +50,11 @@ function abortableFn<T>(fn: (abortSignal: AbortSignal) => Promise<T>): () => voi
   };
 }
 
+const normalizedCatWordIndices = new Map<string, number>();
+CatWords.forEach((word, index) => {
+  normalizedCatWordIndices.set(normalizeWordHomoglyphs(word), index);
+});
+
 const windowHash = window.location.hash;
 if (windowHash.length > 1) {
   const decodedHash = decodeURIComponent(windowHash.slice(1));
@@ -60,11 +65,9 @@ if (windowHash.length > 1) {
 async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<string> {
   // How many bytes starting from the end have we encoded (as words)
   let endCounter = 0;
-  // How many bytes starting from the start have we encoded (as letter homoglyphs)
-  let startCounter = 0;
 
-  let words: string[] = [];
-  let homoglyphCounts: number[] = [];
+  const words: string[] = [];
+  const homoglyphCounts: number[] = [];
   while (true) {
     // We need more words
     endCounter += 1;
@@ -75,53 +78,71 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
     words.push(nextWord);
     homoglyphCounts.push(...getWordHomoglyphCounts(nextWord));
 
-    // Attempt to encode the data with the given word-letter-homoglyphs
-    const dataToEncode = data.slice(0, data.length - endCounter);
-    let counter = 0;
+    // Attempt to encode the remaining data with the given word-letter-homoglyphs
+    const toEncode = data.slice(0, data.length - endCounter);
+    const divisors: number[] = [];
     let done = true;
-    const encoded = hyperbase.encode(dataToEncode, () => {
-      if (counter >= homoglyphCounts.length) {
+    const encoded = hyperbase.encode(toEncode, () => {
+      if (divisors.length >= homoglyphCounts.length) {
         done = false;
         return 256;
       }
 
-      const base = homoglyphCounts[counter];
-      counter += 1;
+      const base = homoglyphCounts[divisors.length];
+      divisors.push(base);
       return base;
     });
 
     // If encoding it worked, we have to generate the correct words with replaced letters
     if (done) {
+      console.log({
+        data,
+        toEncode,
+        encoded,
+        endCounter,
+        homoglyphCounts,
+        divisors,
+      });
+      assert(divisors.length === encoded.length, `${divisors.length} must be equal to ${encoded.length}`);
+      assert(encoded.length <= homoglyphCounts.length, `${encoded.length} must be less than ${homoglyphCounts.length}`);
+      {
+        let quickDecoded = hyperbase.decode(encoded, divisors);
+        console.log({
+          toEncode,
+          quickDecoded,
+        });
+      }
+
       let encodedIndex = 0;
       // Have to reverse it so that the homoglyph counts match up
       const encodedReversed = encoded.slice().reverse();
-      const encodedWords: string[] = words.map((word) => {
-        let letters = [...word].map((v) => {
-          if (encodedIndex == encodedReversed.length) {
-            // Done encoding, put a cute little separator here
-            return "--" + v;
-          } else if (encodedIndex > encodedReversed.length) {
-            // Done encoding
-            return v;
-          } else {
-            const lookalikes = (HomoglyphsMap.get(v) || { lookalikes: [v] }).lookalikes;
-            if (lookalikes.length > 1) {
-              // Found a letter with multiple similar letters
-              const toEncode = encodedReversed[encodedIndex];
-              encodedIndex += 1;
-              if (toEncode >= lookalikes.length) {
-                console.error("Encoding Algorithm is broken", toEncode, lookalikes);
-              }
-              return lookalikes[toEncode];
-            } else {
-              // Cannot encode anything
+      const encodedWords: string[] = words.map((word) =>
+        [...word]
+          .map((v) => {
+            if (encodedIndex == encodedReversed.length) {
+              // Done encoding, put a cute little separator here
+              return "--" + v;
+            } else if (encodedIndex > encodedReversed.length) {
+              // Done encoding
               return v;
+            } else {
+              const lookalikes = (HomoglyphsMap.get(v) || { lookalikes: [v] }).lookalikes;
+              if (lookalikes.length > 1) {
+                // Found a letter with multiple similar letters
+                const toEncode = encodedReversed[encodedIndex];
+                encodedIndex += 1;
+                if (toEncode >= lookalikes.length) {
+                  console.error("Encoding Algorithm is broken", toEncode, lookalikes);
+                }
+                return lookalikes[toEncode];
+              } else {
+                // Cannot encode anything
+                return v;
+              }
             }
-          }
-        });
-
-        return letters.join("");
-      });
+          })
+          .join("")
+      );
 
       return encodedWords.join("-");
     }
@@ -130,15 +151,44 @@ async function catEncode(data: Uint8Array, abortSignal: AbortSignal): Promise<st
   }
 }
 
-function getWordHomoglyphCounts(word: string) {
-  return [...word]
-    .map((letter) => (HomoglyphsMap.get(letter) || { lookalikes: [letter] }).lookalikes.length)
-    .filter((v) => v > 1);
-}
-
 function catDecode(data: string): Uint8Array {
-  // TODO: First do the "--" separator thingy
-  const words = data.split("-");
+  // Decode final bytes (which were encoded by picking the words)
+  const words = data.replace("--", "").split("-");
+  const endBytes = words.map((v) => {
+    const value = normalizedCatWordIndices.get(normalizeWordHomoglyphs(v));
+    if (value === undefined) {
+      throw new Error("Could not find word: " + v);
+    }
+    return value;
+  });
+  endBytes.reverse();
+
+  // Decode other bytes (which were encoded by picking the letter homoglyphs)
+  const homoglyphCounts: number[] = [];
+  words.forEach((word) => homoglyphCounts.push(...getWordHomoglyphCounts(word)));
+
+  // Skip the letters after the --
+  const wordsWithData = data.replace(/--.*/, "").split("-");
+  const antiEncodedReversed: number[] = [];
+  wordsWithData.forEach((word) =>
+    [...word].forEach((v) => {
+      const letterHomoglyphsInfo = HomoglyphsMap.get(v);
+      if (letterHomoglyphsInfo === undefined) return;
+
+      antiEncodedReversed.push(letterHomoglyphsInfo.index);
+    })
+  );
+
+  const antiEncoded = antiEncodedReversed.slice(); //.reverse();
+  const antiToEncode = hyperbase.decode(antiEncoded, homoglyphCounts);
+  console.log({
+    endBytes,
+    homoglyphCounts,
+    antiEncoded,
+    antiToEncode,
+  });
+
+  return concatUint8Array(antiToEncode, new Uint8Array(endBytes));
 }
 
 function compress(text: string) {

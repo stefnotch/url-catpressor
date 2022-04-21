@@ -61,6 +61,7 @@ export function useHyperbase() {
     while (--zeros >= 0) {
       outputStart -= 1;
       encoded[outputStart] = 0;
+      validateDivisor(nextDivisor());
     }
     // Return encoded values (including encoded leading zeros).
     return encoded.slice(outputStart, encoded.length);
@@ -76,12 +77,11 @@ export function useHyperbase() {
       return new Uint8Array(0);
     }
 
-    divisors = divisors.slice();
+    divisors = divisors.slice().reverse();
     // Count leading zeros.
     let zeros = 0;
     while (zeros < input.length && input[zeros] == 0) {
       zeros += 1;
-      divisors.unshift(1); // An interesting  hack
     }
 
     // Convert base-X digits to base-256 digits.
@@ -149,7 +149,7 @@ export function useHyperbase() {
 /*
 
 function testHyperbase() {
-  for (let base = 2; base < 256; base++) {
+  for (let base = 2; base <= 256; base++) {
     const hb = useHyperbase();
     const valueLength = Math.floor(Math.random() * 100);
 
@@ -165,16 +165,28 @@ function testHyperbase() {
     };
     const encoded = hb.encode(values, getDivEncoding);
 
-    const decodingDivisors = divisors.slice();
-    decodingDivisors.reverse();
-    const decoded = hb.decode(encoded, decodingDivisors);
+    const decoded = hb.decode(encoded, divisors);
 
+    if (values.length !== decoded.length) {
+      console.log(`1. Failed to encode/decode with base ${base}`);
+      console.log({ valueLength, values, encoded, decoded, divisors });
+    }
     if (!values.every((v, i) => v === decoded[i])) {
-      console.log(`Failed to encode/decode with base ${base}`);
-      console.log(valueLength);
-      console.log(values);
-      console.log(decoded);
-      console.log(encoded);
+      console.log(`2. Failed to encode/decode with base ${base}`);
+      console.log({ valueLength, values, encoded, decoded, divisors });
+    }
+    if (divisors.length !== encoded.length) {
+      console.log(`3. Failed to encode/decode with base ${base}`);
+      console.log({ valueLength, values, encoded, decoded, divisors });
+    }
+    if (
+      !divisors
+        .slice()
+        .reverse()
+        .every((v, i) => v >= encoded[i])
+    ) {
+      console.log(`4. Failed to encode/decode with base ${base}`);
+      console.log({ valueLength, values, encoded, decoded, divisors });
     }
   }
 }

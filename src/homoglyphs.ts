@@ -47,3 +47,13 @@ Homoglyphs.forEach((v) => {
     HomoglyphsMap.set(lookalike, { index: i, lookalikes: v });
   });
 });
+
+export function getWordHomoglyphCounts(word: string) {
+  return [...word]
+    .map((letter) => (HomoglyphsMap.get(letter) || { lookalikes: [letter] }).lookalikes.length)
+    .filter((v) => v > 1);
+}
+
+export function normalizeWordHomoglyphs(word: string) {
+  return [...word].map((letter) => (HomoglyphsMap.get(letter) || { lookalikes: [letter] }).lookalikes[0]).join("");
+}
