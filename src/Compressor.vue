@@ -11,14 +11,13 @@ const props = defineProps<{
     compress(data: Uint8Array): Uint8Array;
     decompress(data: Uint8Array): Uint8Array;
   };
+  url: String;
 }>();
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 const hyperbase = useHyperbase();
 
-const urlInput = ref("");
-const isUrl = computed(() => urlInput.value !== "" && urlInput.value.includes("."));
 const compressedUrlBytes = ref(new Uint8Array(0));
 const encodedUrl = ref("");
 
@@ -204,17 +203,17 @@ function decompress(compressed: Uint8Array) {
 // 2. List of letter-lookalikes (with mostly every letter that appears in le cats list getting a bunch of lookalikes)
 
 watch(
-  urlInput,
+  () => props.url,
   useDebounceFn(() => {
     // Technically this doesn't support all kinds of URLs, but eh
     // Strip the HTTP(s) part -> 1 bit
-    const urlString = urlInput.value.replace(/^https?:\/\/|^\/\//, "");
+    const urlString = props.url.replace(/^https?:\/\/|^\/\//, "");
     const compressed: Uint8Array = concatUint8Array(
-      new Uint8Array([urlInput.value.startsWith("http:") ? 0 : 1]),
+      new Uint8Array([props.url.startsWith("http:") ? 0 : 1]),
       compress(urlString)
     );
     compressedUrlBytes.value = compressed;
-  }, 200)
+  }, 250)
 );
 
 const updateEncodedUrl = abortableFn(async (abortSignal) => {
@@ -237,18 +236,39 @@ function concatUint8Array(a: Uint8Array, b: Uint8Array) {
 
 <template>
   <div>
-    <input type="text" v-model="urlInput" placeholder="Put your URL here" />
-    <span v-if="!isUrl">Enter a valid URL</span>
+    <!--
+    <details>
+      <summary>Coder cat lives here</summary>
+      <a href="https://github.com/google/brotli" target="_blank"> Bread-li: </a>
+      {{ props.url.length }} characters compressed to {{ compressedUrlBytes.length }} bytes (=
+      {{ compressedUrlBytes.length * 8 }} bits)
+      <br>
+      Url: 
+      <a v-if="encodedUrl" :href="encodedUrl" target="_blank">
+        {{ encodedUrl }}
+      </a>
+    </details>
+-->
     <br />
-    <!-- Coder cat -->
-    {{ urlInput.length }} characters compressed to {{ compressedUrlBytes.length }} bytes (=
-    {{ compressedUrlBytes.length * 8 }} bits)
+    <hr />
     <br />
 
-    <a v-if="encodedUrl" :href="encodedUrl" target="_blank">
+    <div class="final-url">
       {{ encodedUrl }}
-    </a>
+    </div>
   </div>
 </template>
 
-<style></style>
+<style scoped>
+details:hover {
+  cursor: pointer;
+}
+details {
+  font-size: 0.8rem;
+  font-family: "Courier New", Courier, monospace;
+  border-bottom: 1px solid black;
+}
+.final-url:hover {
+  cursor: copy;
+}
+</style>
