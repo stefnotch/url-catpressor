@@ -239,17 +239,17 @@ export async function useCompression() {
 
   heap.push(undefined, null, true, false);
 
-  function getObject(idx) {
+  function getObject(idx: number) {
     return heap[idx];
   }
 
-  const lTextDecoder = typeof TextDecoder === "undefined" ? (0, module.require)("util").TextDecoder : TextDecoder;
+  const lTextDecoder = TextDecoder;
 
   let cachedTextDecoder = new lTextDecoder("utf-8", { ignoreBOM: true, fatal: true });
 
   cachedTextDecoder.decode();
 
-  let cachegetUint8Memory0 = null;
+  let cachegetUint8Memory0: Uint8Array | null = null;
   function getUint8Memory0() {
     if (cachegetUint8Memory0 === null || cachegetUint8Memory0.buffer !== wasm.memory.buffer) {
       cachegetUint8Memory0 = new Uint8Array(wasm.memory.buffer);
@@ -257,13 +257,13 @@ export async function useCompression() {
     return cachegetUint8Memory0;
   }
 
-  function getStringFromWasm0(ptr, len) {
+  function getStringFromWasm0(ptr: number, len: number) {
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
   }
 
   let heap_next = heap.length;
 
-  function addHeapObject(obj) {
+  function addHeapObject(obj: any) {
     if (heap_next === heap.length) heap.push(heap.length + 1);
     const idx = heap_next;
     heap_next = heap[idx];
@@ -274,16 +274,16 @@ export async function useCompression() {
 
   let WASM_VECTOR_LEN = 0;
 
-  const lTextEncoder = typeof TextEncoder === "undefined" ? (0, module.require)("util").TextEncoder : TextEncoder;
+  const lTextEncoder = TextEncoder;
 
-  let cachedTextEncoder = new lTextEncoder("utf-8");
+  let cachedTextEncoder = new lTextEncoder();
 
   const encodeString =
     typeof cachedTextEncoder.encodeInto === "function"
-      ? function (arg, view) {
+      ? function (arg: any, view: any) {
           return cachedTextEncoder.encodeInto(arg, view);
         }
-      : function (arg, view) {
+      : function (arg: any, view: any) {
           const buf = cachedTextEncoder.encode(arg);
           view.set(buf);
           return {
@@ -292,7 +292,7 @@ export async function useCompression() {
           };
         };
 
-  function passStringToWasm0(arg, malloc, realloc) {
+  function passStringToWasm0(arg: any, malloc: any, realloc: any) {
     if (realloc === undefined) {
       const buf = cachedTextEncoder.encode(arg);
       const ptr = malloc(buf.length);
@@ -324,14 +324,14 @@ export async function useCompression() {
       const view = getUint8Memory0().subarray(ptr + offset, ptr + len);
       const ret = encodeString(arg, view);
 
-      offset += ret.written;
+      offset += ret.written ?? 0;
     }
 
     WASM_VECTOR_LEN = offset;
     return ptr;
   }
 
-  let cachegetInt32Memory0 = null;
+  let cachegetInt32Memory0: Int32Array | null = null;
   function getInt32Memory0() {
     if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
       cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
@@ -339,19 +339,19 @@ export async function useCompression() {
     return cachegetInt32Memory0;
   }
 
-  function dropObject(idx) {
+  function dropObject(idx: number) {
     if (idx < 36) return;
     heap[idx] = heap_next;
     heap_next = idx;
   }
 
-  function takeObject(idx) {
+  function takeObject(idx: number) {
     const ret = getObject(idx);
     dropObject(idx);
     return ret;
   }
 
-  function passArray8ToWasm0(arg, malloc) {
+  function passArray8ToWasm0(arg: any, malloc: any) {
     const ptr = malloc(arg.length * 1);
     getUint8Memory0().set(arg, ptr / 1);
     WASM_VECTOR_LEN = arg.length;
@@ -360,13 +360,13 @@ export async function useCompression() {
 
   let stack_pointer = 32;
 
-  function addBorrowedObject(obj) {
+  function addBorrowedObject(obj: any) {
     if (stack_pointer == 1) throw new Error("out of js stack");
     heap[--stack_pointer] = obj;
     return stack_pointer;
   }
 
-  function getArrayU8FromWasm0(ptr, len) {
+  function getArrayU8FromWasm0(ptr: number, len: number) {
     return getUint8Memory0().subarray(ptr / 1, ptr / 1 + len);
   }
 
@@ -403,23 +403,23 @@ export async function useCompression() {
     }
   }
 
-  function __wbindgen_is_undefined(arg0) {
+  function __wbindgen_is_undefined(arg0: number) {
     var ret = getObject(arg0) === undefined;
     return ret;
   }
 
-  function __wbindgen_is_object(arg0) {
+  function __wbindgen_is_object(arg0: number) {
     const val = getObject(arg0);
     var ret = typeof val === "object" && val !== null;
     return ret;
   }
 
-  function __wbindgen_string_new(arg0, arg1) {
+  function __wbindgen_string_new(arg0: any, arg1: any) {
     var ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
   }
 
-  function __wbindgen_json_serialize(arg0, arg1) {
+  function __wbindgen_json_serialize(arg0: any, arg1: any) {
     const obj = getObject(arg1);
     var ret = JSON.stringify(obj === undefined ? null : obj);
     var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
@@ -433,7 +433,7 @@ export async function useCompression() {
     return addHeapObject(ret);
   }
 
-  function __wbg_stack_558ba5917b466edd(arg0, arg1) {
+  function __wbg_stack_558ba5917b466edd(arg0: any, arg1: any) {
     var ret = getObject(arg1).stack;
     var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     var len0 = WASM_VECTOR_LEN;
@@ -441,7 +441,7 @@ export async function useCompression() {
     getInt32Memory0()[arg0 / 4 + 0] = ptr0;
   }
 
-  function __wbg_error_4bb6c2a97407129a(arg0, arg1) {
+  function __wbg_error_4bb6c2a97407129a(arg0: any, arg1: any) {
     try {
       console.error(getStringFromWasm0(arg0, arg1));
     } finally {
@@ -449,11 +449,11 @@ export async function useCompression() {
     }
   }
 
-  function __wbindgen_object_drop_ref(arg0) {
+  function __wbindgen_object_drop_ref(arg0: any) {
     takeObject(arg0);
   }
 
-  function __wbindgen_rethrow(arg0) {
+  function __wbindgen_rethrow(arg0: number) {
     throw takeObject(arg0);
   }
 
