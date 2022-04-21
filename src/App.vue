@@ -5,16 +5,31 @@ import Compressor from "./Compressor.vue";
 import CatpressorLogo from "./assets/CatpressorLogo.vue";
 import { catDecode } from "./cat-encoding";
 
-const compressor = shallowRef<{
+interface Compressor {
   compress(data: Uint8Array): Uint8Array;
   decompress(data: Uint8Array): Uint8Array;
-} | null>(null);
+}
+
+const compressor = shallowRef<Compressor | null>(null);
 
 const urlInput = ref("");
 const isUrl = computed(() => urlInput.value !== "" && (urlInput.value.includes(".") || urlInput.value.includes("/")));
 const textDecoder = new TextDecoder();
 
 useCompression().then((c) => {
+  const comp: Compressor = {
+    compress: (data) => c.compress(data, { quality: 11 }),
+    decompress: c.decompress,
+  };
+  handleWindowHash(comp);
+  compressor.value = comp;
+
+  window.addEventListener("hashchange", () => {
+    handleWindowHash(comp);
+  });
+});
+
+function handleWindowHash(c: Compressor) {
   const windowHash = window.location.hash;
   if (windowHash.length > 1) {
     const decodedHash = decodeURIComponent(windowHash.slice(1));
@@ -24,11 +39,7 @@ useCompression().then((c) => {
       (decodedBytes[0] ? "https://" : "http://") + textDecoder.decode(c.decompress(decodedBytes.slice(1)))
     );
   }
-  compressor.value = {
-    compress: (data) => c.compress(data, { quality: 11 }),
-    decompress: c.decompress,
-  };
-});
+}
 
 const splashTexts = [
   "OwO",
