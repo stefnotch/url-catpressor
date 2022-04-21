@@ -2,8 +2,8 @@
 
 Cats hehe
 
-Getting this to work involved the code being like
-![No](https://tenor.com/view/cat-glitch-bug-wtf-angrycat-gif-8082737)
+Getting this to work involved the code being like  
+![No](https://c.tenor.com/LAHdIKYb2U8AAAAd/cat-glitch.gif)
 
 until I bonked it hard enough.
 
