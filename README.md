@@ -1,4 +1,4 @@
-# url-catpressor
+# URL Catpressor
 
 [**View it in action here**](https://stefnotch.github.io/url-catpressor/)
 
