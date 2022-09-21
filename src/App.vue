@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, shallowRef, watch, type Ref } from "vue";
+import { computed, ref, shallowRef } from "vue";
 import { useCompression } from "./useCompression";
 import Compressor from "./Compressor.vue";
 import CatpressorLogo from "./assets/CatpressorLogo.vue";
@@ -19,7 +19,7 @@ const textDecoder = new TextDecoder();
 useCompression().then((c) => {
   const comp: Compressor = {
     compress: (data) => c.compress(data, { quality: 11 }),
-    decompress: c.decompress,
+    decompress: (data) => c.decompress(data),
   };
   handleWindowHash(comp);
   compressor.value = comp;
@@ -38,10 +38,11 @@ function handleWindowHash(c: Compressor) {
     window.location.replace(
       (decodedBytes[0] ? "https://" : "http://") + textDecoder.decode(c.decompress(decodedBytes.slice(1)))
     );
+    window.location.hash = "";
   }
 }
 
-const splashTexts = [
+const splashTexts: readonly string[] = [
   "OwO",
   "UwU",
   "Cats would swipe right",

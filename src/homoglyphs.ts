@@ -37,7 +37,7 @@ JSON.parse(homoglyphsJsonString).forEach((v: string[]) => {
   );
 });
 
-export const HomoglyphsMap = new Map<string, { index: number; lookalikes: string[] }>();
+export const HomoglyphsMap = new Map<string, { index: number; lookalikes: readonly string[] }>();
 
 Homoglyphs.forEach((v) => {
   v.forEach((lookalike, i) => {
@@ -48,7 +48,7 @@ Homoglyphs.forEach((v) => {
   });
 });
 
-export function getWordHomoglyphCounts(word: string) {
+export function getWordHomoglyphCounts(word: string): readonly number[] {
   return [...word]
     .map((letter) => (HomoglyphsMap.get(letter) || { lookalikes: [letter] }).lookalikes.length)
     .filter((v) => v > 1);
