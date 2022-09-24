@@ -126,6 +126,7 @@ header {
   display: flex;
   animation: jelly-cat 1.6s ease 0.5s 1 normal forwards;
   position: relative;
+  max-width: 100%;
 }
 .short-splash {
   font-size: 40px;
