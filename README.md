@@ -10,9 +10,9 @@ until I bonked it hard enough.
 
 ## Wait how does this work?
 
-It 
-1. Strips off the HTTP/HTTPS (1 bit, though the current implementation wastes an entire byte)
-2. Brotli-compresses your URL (n bytes)
+It takes a URL and then
+1. Strips off the HTTP/HTTPS (= 1 bit, though the current implementation wastes an entire byte)
+2. Brotli-compresses your URL (= n bytes)
 3. Encodes some bytes by picking cat-words
     - 256 different words, so one word encodes one byte
 4. Encodes the remaining bytes by picking different letters for the cat-words
