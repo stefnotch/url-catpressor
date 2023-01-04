@@ -20,7 +20,7 @@ It takes a URL and then
     - This part is very fun, because I ended up picking a fun encoding scheme...remember how binary uses 0 and 1 as its symbols? And how hexadecimal has 16 different symbols? Well, the letter-look-alikes approach has the fun property that some letters have a lot of look-alikes and others have very few. Thus, a word ends up being a cursed mixture of base 2, base 16, base 23, base 11, base 5, and more depending on the letters...
 
 
-*But hey, at least I don't have to pay for a server!*
+*But hey, at least I don't have to pay for a server to host a sensible backend!*
 
   
 ## Licensing Information
